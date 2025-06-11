@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, session
 import json
 import re
+import os
 from flask_cors import CORS
 from google.oauth2.service_account import Credentials
 from gemini_api import get_gemini_response
