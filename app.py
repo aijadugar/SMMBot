@@ -17,7 +17,7 @@ creds_json = os.getenv("GOOGLE_CREDS")
 creds_dict = json.loads(creds_json)
 creds = Credentials.from_service_account_info(creds_dict)
 
-sheet = gspread.authorize(cred).open_by_key('1JtYtzxObTCawJejMX0yxtDjOGiAN3bk2hnv-OA9vDX8').sheet1
+sheet = gspread.authorize(creds).open_by_key('1JtYtzxObTCawJejMX0yxtDjOGiAN3bk2hnv-OA9vDX8').sheet1
 
 @app.route('/chat', methods=['POST'])
 def chat():
