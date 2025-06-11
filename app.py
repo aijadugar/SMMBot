@@ -1,76 +1,67 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session
+import json
+import re
 from flask_cors import CORS
+from google.oauth2.service_account import Credentials
 from gemini_api import get_gemini_response
+import gspread
 
 app = Flask(__name__)
 CORS(app)
+app.secret_key = '8f4d8f72e6a34670b0a5f4b681a2413e'
+
+cred = Credentials.from_service_account_file("credentials.json", scopes = ["https://www.googleapis.com/auth/spreadsheets"])
+
+sheet = gspread.authorize(cred).open_by_key('1JtYtzxObTCawJejMX0yxtDjOGiAN3bk2hnv-OA9vDX8').sheet1
+
+
 
 @app.route('/chat', methods=['POST'])
 def chat():
     data = request.json
     user_message = data.get('message')
 
-    # For now, return a static response
     response_text = get_gemini_response(user_message)
 
-    # extracted_info = {
-    #     "name": "",
-    #     "email": "",
-    #     "mobile": ""
-    # }
+    if response_text.startswith("```json") and response_text.endswith("```"):
+        response_text = response_text.strip("`")  # remove backticks
+        response_text = response_text.replace("json", "", 1).strip()
+
+    print("Cleaned Gemini Response:", response_text)
+
+    try:
+        match = re.search(r'\{.*\}', response_text, re.DOTALL)
+        if match:
+            extracted_info = json.loads(match.group())
+        else:
+            extracted_info = {}
+    except json.JSONDecodeError:
+        return jsonify({
+            "response": "Sorry, couldn't extract data. Please rephrase.",
+            "info": {}
+        })
+
+    # Store values in session
+    for key in ['name', 'email', 'mobile']:
+        if key in extracted_info and extracted_info[key]:
+            session[key] = extracted_info[key]
+
+    # Save to sheet if all fields are captured
+    if all(k in session for k in ('name', 'email', 'mobile')):
+        sheet.append_row([session['name'], session['email'], session['mobile']])
+        session.pop('name', None)
+        session.pop('email', None)
+        session.pop('mobile', None)
+
+        return jsonify({
+            "response": "Thanks for your response! Your details have been saved.",
+            "info": extracted_info
+        })
 
     return jsonify({
-        "response": response_text,
-        # "info": extracted_info
+        "response": "Got it. Please continue with the remaining details.",
+        "info": extracted_info
     })
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-"""
-from flask import Flask, request, session
-import gspread
-from google.oauth2.service_account import Credentials
-
-app = Flask(__name__)
-app.secret_key = 'your-secret-key'  # Required for session
-
-# Setup Google Sheets
-creds = Credentials.from_service_account_file('path-to-credentials.json', scopes=[
-    "https://www.googleapis.com/auth/spreadsheets"
-])
-sheet = gspread.authorize(creds).open("YourSheetName").sheet1
-
-# Route for chatbot messages
-@app.route("/chat", methods=["POST"])
-def chat():
-    user_input = request.json.get("message", "")
-    
-    # Very basic data extraction (replace with NLP if needed)
-    if "name is" in user_input.lower():
-        session['name'] = user_input.split("name is")[-1].strip()
-    elif "email is" in user_input.lower():
-        session['email'] = user_input.split("email is")[-1].strip()
-    elif "mobile is" in user_input.lower():
-        session['mobile'] = user_input.split("mobile is")[-1].strip()
-
-    # Check if all data is collected
-    if all(k in session for k in ('name', 'email', 'mobile')):
-        # Send to Google Sheet
-        row = [session['name'], session['email'], session['mobile']]
-        sheet.append_row(row)
-
-        # Clear session data
-        session.pop('name')
-        session.pop('email')
-        session.pop('mobile')
-        
-        return {"response": "Thanks! Your details have been saved."}
-    
-    return {"response": "Got it. Please continue..."}
-
-if __name__ == "__main__":
-    app.run(debug=True)
-
-"""
