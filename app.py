@@ -11,11 +11,17 @@ app = Flask(__name__)
 CORS(app)
 app.secret_key = '8f4d8f72e6a34670b0a5f4b681a2413e'
 
+# cred = Credentials.from_service_account_file("credentials.json", scopes = ["https://www.googleapis.com/auth/spreadsheets"])
 
+# sheet = gspread.authorize(cred).open_by_key('1JtYtzxObTCawJejMX0yxtDjOGiAN3bk2hnv-OA9vDX8').sheet1
+
+# Load service account credentials from Render env
 service_account_info = json.loads(os.environ['GOOGLE_CREDS'])
-creds = service_account.Credentials.from_service_account_info(service_account_info)
-sheet = gspread.authorize(cred).open_by_key('1JtYtzxObTCawJejMX0yxtDjOGiAN3bk2hnv-OA9vDX8').sheet1
+creds = Credentials.from_service_account_info(service_account_info)
 
+# Example: authorize with gspread
+gc = gspread.authorize(creds)
+sheet = gc.open("SMM_Chatbot").sheet1
 
 
 @app.route('/chat', methods=['POST'])
