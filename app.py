@@ -10,8 +10,9 @@ app = Flask(__name__)
 CORS(app)
 app.secret_key = '8f4d8f72e6a34670b0a5f4b681a2413e'
 
-cred = Credentials.from_service_account_file("credentials.json", scopes = ["https://www.googleapis.com/auth/spreadsheets"])
 
+service_account_info = json.loads(os.environ['GOOGLE_CREDS'])
+creds = service_account.Credentials.from_service_account_info(service_account_info)
 sheet = gspread.authorize(cred).open_by_key('1JtYtzxObTCawJejMX0yxtDjOGiAN3bk2hnv-OA9vDX8').sheet1
 
 
@@ -24,7 +25,7 @@ def chat():
     response_text = get_gemini_response(user_message)
 
     if response_text.startswith("```json") and response_text.endswith("```"):
-        response_text = response_text.strip("`")  # remove backticks
+        response_text = response_text.strip("`")  
         response_text = response_text.replace("json", "", 1).strip()
 
     print("Cleaned Gemini Response:", response_text)
@@ -41,12 +42,10 @@ def chat():
             "info": {}
         })
 
-    # Store values in session
     for key in ['name', 'email', 'mobile']:
         if key in extracted_info and extracted_info[key]:
             session[key] = extracted_info[key]
 
-    # Save to sheet if all fields are captured
     if all(k in session for k in ('name', 'email', 'mobile')):
         sheet.append_row([session['name'], session['email'], session['mobile']])
         session.pop('name', None)
