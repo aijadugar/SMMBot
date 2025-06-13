@@ -11,21 +11,23 @@ model = genai.GenerativeModel("gemini-1.5-flash-latest")
 
 def get_gemini_response(user_message):
     prompt = f"""
-Extract the user's name, email, and mobile number from the message below.
+    You are a smart assistant.
 
-Respond ONLY with a JSON object, nothing else. The format must be:
+    If the message is a casual greeting like "hi", "hello", "hey", "good morning", or similar, simply reply with a friendly response like "Hello!, I am IDTI Bot, How can I assist you today?".
 
-{{
-  "name": "Full Name",
-  "email": "email@example.com",
-  "mobile": "1234567890"
-}}
+    Otherwise, if the message includes details like a person's name, email, or phone number, extract the following information and return it as a JSON object in this exact format:
 
-Do NOT include any text before or after the JSON.
+    {{
+      "name": "Full Name",
+      "email": "email@example.com",
+      "mobile": "1234567890"
+    }}
 
-User message:
-\"\"\"{user_message}\"\"\"
-"""
+    Do NOT include any text before or after the JSON. Return only what is asked depending on the message type.
+
+    User message:
+    \"\"\"{user_message}\"\"\"
+    """
 
     response = model.generate_content(prompt)
     return response.text.strip()
