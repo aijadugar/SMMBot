@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, supports_credentials=True)
 app.secret_key = '8f4d8f72e6a34670b0a5f4b681a2413e'
 
 
@@ -26,53 +26,48 @@ sheet = gspread.authorize(credentials).open_by_key('1JtYtzxObTCawJejMX0yxtDjOGiA
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    data = request.json
-    user_message = data.get('message')
+    data = request.get_json()
+    user_message = data.get("message", "")
 
-    response_text = get_gemini_response(user_message)
+    if "collected_info" not in session:
+        session["collected_info"] = {"name": None, "email": None, "mobile": None}
 
-    if response_text.strip().startswith("{") and response_text.strip().endswith("}"):
-        response_text = response_text.strip("`")  
-        response_text = response_text.replace("json", "", 1).strip()
+    info = session["collected_info"]
 
-    print("Cleaned Gemini Response:", response_text)
+    if not info["email"]:
+        email_match = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", user_message)
+        if email_match:
+            info["email"] = email_match.group().strip()
 
-    try:
-        match = re.search(r'\{.*\}', response_text, re.DOTALL)
-        if match:
-            extracted_info = json.loads(match.group())
+    if not info["mobile"]:
+        mobile_match = re.search(r"\b(?:\+91[-\s]?)?[6-9]\d{9}\b", user_message)
+        if mobile_match:
+            info["mobile"] = mobile_match.group().strip()
+
+    if not info["name"]:
+        # Try with prefix
+        name_match = re.search(r"(?:my name is|i am|this is|it's|its)\s+([A-Z][a-z]+(?:\s[A-Z][a-z]+)?)", user_message, re.IGNORECASE)
+        if name_match:
+            info["name"] = name_match.group(1).strip()
         else:
-            extracted_info = {}
-    except json.JSONDecodeError:
+            simple_name_match = re.fullmatch(r"[A-Z][a-z]+(?:\s[A-Z][a-z]+)?", user_message.strip(), re.IGNORECASE)
+            if simple_name_match:
+                info["name"] = simple_name_match.group().strip()
+
+    session["collected_info"] = info
+
+    if all(info.values()):
+        sheet.append_row([info["name"], info["email"], info["mobile"]])
+        session.pop("collected_info", None)
         return jsonify({
-            "response": "Sorry, couldn't extract data. Please rephrase.",
-            "info": {}
+            "response": "Thanks to you! Your details have been saved.",
+            "info": info
         })
 
-    for key in ['name', 'email', 'mobile']:
-        if key in extracted_info and extracted_info[key]:
-            session[key] = extracted_info[key]
-
-    if all(k in session for k in ('name', 'email', 'mobile')):
-        sheet.append_row([session['name'], session['email'], session['mobile']])
-        session.pop('name', None)
-        session.pop('email', None)
-        session.pop('mobile', None)
-
-        return jsonify({
-            "response": "Thanks for your response! Your details have been saved.",
-            "info": extracted_info
-        })
-    
-    if extracted_info:
-        return jsonify({
-            "response": "Ok, can you please provide your name, email, and mobile number?",
-            "info": extracted_info
-        })
-    
+    missing = [k for k, v in info.items() if not v]
     return jsonify({
-        "response": response_text,
-        "info": {}
+        "response": f"Got it. Can you please provide your {', '.join(missing)}?",
+        "info": info
     })
 
 if __name__ == '__main__':
