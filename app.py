@@ -31,7 +31,7 @@ def chat():
 
     response_text = get_gemini_response(user_message)
 
-    if response_text.startswith("```json") and response_text.endswith("```"):
+    if response_text.strip().startswith("{") and response_text.strip().endswith("}"):
         response_text = response_text.strip("`")  
         response_text = response_text.replace("json", "", 1).strip()
 
@@ -63,10 +63,16 @@ def chat():
             "response": "Thanks for your response! Your details have been saved.",
             "info": extracted_info
         })
-
+    
+    if extracted_info:
+        return jsonify({
+            "response": "Ok, can you please provide your name, email, and mobile number?",
+            "info": extracted_info
+        })
+    
     return jsonify({
-        "response": "Got it. Please continue with the remaining details.",
-        "info": extracted_info
+        "response": response_text,
+        "info": {}
     })
 
 if __name__ == '__main__':
