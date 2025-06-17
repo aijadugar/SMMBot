@@ -29,13 +29,6 @@ def chat():
     data = request.get_json()
     user_message = data.get("message", "")
 
-    if session.get('registered'):
-        gemini_response = get_gemini_response(user_message)
-        return jsonify({
-            "response" : gemini_response,
-            "info" : "Hello, I am IDTI Bot, What you want to know about IDTI."
-        })
-
     if "collected_info" not in session:
         session["collected_info"] = {"name": None, "email": None, "mobile": None}
 
@@ -65,7 +58,6 @@ def chat():
     if all(info.values()):
         sheet.append_row([info["name"], info["email"], info["mobile"]])
         session.pop("collected_info", None)
-        session["registered"] = True
         return jsonify({
             "response": "Thanks to you! Your details have been saved.",
             "info": info
