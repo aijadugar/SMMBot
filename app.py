@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app,origins=["https://smmbot-p68e.onrender.com"], supports_credentials=True)
+CORS(app, supports_credentials=True)
 app.secret_key = '8f4d8f72e6a34670b0a5f4b681a2413e'
 
 
