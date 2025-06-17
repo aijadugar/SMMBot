@@ -67,7 +67,23 @@ def chat():
             "info": info
         })
 
+        # Extract name
     if not info["name"]:
+        # Try full sentence patterns first
+        name_match = re.search(
+            r"(?:my name is|i am|this is|it's|its)\s+([a-zA-Z][a-z]+(?:\s[a-zA-Z][a-z]+)?)",
+            user_message,
+            re.IGNORECASE
+        )
+        if name_match:
+            name = name_match.group(1).strip()
+            if name:
+                info["name"] = name.title()
+        else:
+            # Fallback: assume full name if message looks like a name
+            possible_name = user_message.strip()
+            if re.fullmatch(r"[a-zA-Z][a-z]+(?:\s[a-zA-Z][a-z]+)?", possible_name):
+                info["name"] = possible_name.title()
         return jsonify({"response": "Hello! May I know your full name?", "info": info})
     elif not info["email"]:
         return jsonify({"response": f"Thanks, {info['name']}! Could you share your email address?", "info": info})
