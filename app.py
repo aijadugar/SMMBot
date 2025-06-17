@@ -30,7 +30,7 @@ def chat():
     user_message = data.get("message", "")
 
     if "collected_info" not in session:
-        session["collected_info"] = {"name": None, "email": None, "mobile": None}
+        session["collected_info"] = {"name": None, "email": None, "mobile": None, "step": "name"}
 
     info = session["collected_info"]
 
@@ -45,7 +45,11 @@ def chat():
             info["mobile"] = mobile_match.group().strip()
 
     if not info["name"]:
-        name_match = re.search(r"(?:my name is|i am|this is|it's|its)\s+([A-Z][a-z]+(?:\s[A-Z][a-z]+)?)", user_message, re.IGNORECASE)
+        name_match = re.search(
+            r"(?:my name is|i am|this is|it's|its)\s+([A-Z][a-z]+(?:\s[A-Z][a-z]+)?)",
+            user_message,
+            re.IGNORECASE
+        )
         if name_match:
             info["name"] = name_match.group(1).strip()
         else:
@@ -55,17 +59,23 @@ def chat():
 
     session["collected_info"] = info
 
-    if all(info.values()):
+    if all([info["name"], info["email"], info["mobile"]]):
         sheet.append_row([info["name"], info["email"], info["mobile"]])
         session.pop("collected_info", None)
         return jsonify({
-            "response": "Thanks to you! Your details have been saved.",
+            "response": "Thanks to you! Your details have been saved successfully.",
             "info": info
         })
 
-    missing = [k for k, v in info.items() if not v]
+    if not info["name"]:
+        return jsonify({"response": "Hello! May I know your full name?", "info": info})
+    elif not info["email"]:
+        return jsonify({"response": f"Thanks, {info['name']}! Could you share your email address?", "info": info})
+    elif not info["mobile"]:
+        return jsonify({"response": "Almost done! May I have your mobile number?", "info": info})
+
     return jsonify({
-        "response": f"Got it. Can you please provide your {', '.join(missing)}?",
+        "response": "Please provide your name, email, and mobile number.",
         "info": info
     })
 
