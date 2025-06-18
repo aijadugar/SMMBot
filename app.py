@@ -11,18 +11,23 @@ import gspread
 from dotenv import load_dotenv
 load_dotenv()
 
-
+IS_PRODUCTION = os.getenv("FLASK_ENV") == "production"
 
 app = Flask(__name__)
 
 app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_FILE_DIR'] = './flask_session_dir'  # Create this folder or it will default to temp
+app.config['SESSION_FILE_DIR'] = './flask_session_data'  # make sure this directory exists
+app.config['SESSION_COOKIE_NAME'] = 'chatbot_session'
+app.config['SESSION_COOKIE_SECURE'] = True               # if HTTPS
+app.config['SESSION_COOKIE_SECURE'] = IS_PRODUCTION
+app.config['SESSION_COOKIE_SAMESITE'] = 'None' if IS_PRODUCTION else 'Lax'
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'           # required for cross-site
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 app.config['SESSION_PERMANENT'] = True
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=15)
-app.config['SESSION_USE_SIGNER'] = True
 
-CORS(app, supports_credentials=True)
 Session(app)
+CORS(app, supports_credentials=True)
 
 app.secret_key = '8f4d8f72e6a34670b0a5f4b681a2413e'
 
