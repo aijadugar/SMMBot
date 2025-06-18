@@ -21,7 +21,7 @@ app.config['SESSION_PERMANENT'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=15)
 app.config['SESSION_USE_SIGNER'] = True
 
-CORS(app, supports_credentials=True, origins=["https://smmbot-p68e.onrender.com", "http://127.0.0.1:5500"])
+CORS(app, supports_credentials=True, origins=["https://smmbot-p68e.onrender.com/chat", "http://127.0.0.1:5500"])
 Session(app)
 
 app.secret_key = '8f4d8f72e6a34670b0a5f4b681a2413e'
