@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, session
 import json
 import re
 import os
+import redis
 from flask_cors import CORS
 from datetime import timedelta
 from flask_session import Session
@@ -11,25 +12,22 @@ import gspread
 from dotenv import load_dotenv
 load_dotenv()
 
-os.makedirs('./flask_session_dir', exist_ok=True)
-
 app = Flask(__name__)
 
-app.secret_key = '8f4d8f72e6a34670b0a5f4b681a2413e'
+app.secret_key = os.getenv('SECRET_KEY', 'fallback-key-for-dev')
 
-app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_FILE_DIR'] = './flask_session_dir'
+# Session configuration (Redis-based)
+app.config['SESSION_TYPE'] = 'redis'
+app.config['SESSION_REDIS'] = redis.from_url(os.getenv("REDIS_URL"))  # Store in Render env
 app.config['SESSION_PERMANENT'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=15)
 app.config['SESSION_USE_SIGNER'] = True
 app.config['SESSION_COOKIE_NAME'] = 'idti_session'
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
-app.config['SESSION_COOKIE_SECURE'] = True  # required on Render (HTTPS)
+app.config['SESSION_COOKIE_SECURE'] = True
 
-# --- CORS for frontend on idti.in ---
-CORS(app, origins=["https://www.idti.in"], supports_credentials=True)
-
-# --- Initialize session manager ---
+CORS(app, supports_credentials=True, origins=["https://smmbot-p68e.onrender.com", "http://127.0.0.1:5500", "https://www.idti.in"])
+os.makedirs('./flask_session_dir', exist_ok=True)
 Session(app)
 
 creds_json = os.getenv("GOOGLE_CRED")
