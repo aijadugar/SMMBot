@@ -25,6 +25,7 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
 
 CORS(app, supports_credentials=True, origins=["https://smmbot-p68e.onrender.com", "http://127.0.0.1:5500", "https://www.idti.in"])
+os.makedirs('./flask_session_dir', exist_ok=True)
 Session(app)
 
 creds_json = os.getenv("GOOGLE_CRED")
