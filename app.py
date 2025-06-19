@@ -13,16 +13,19 @@ load_dotenv()
 
 app = Flask(__name__)
 
+app.secret_key = '8f4d8f72e6a34670b0a5f4b681a2413e'
+
+# Session configuration
 app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_FILE_DIR'] = './flask_session_dir'  
+app.config['SESSION_FILE_DIR'] = './flask_session_dir'  # You may need to ensure this folder exists in production
 app.config['SESSION_PERMANENT'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=15)
 app.config['SESSION_USE_SIGNER'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = True
 
 CORS(app, supports_credentials=True, origins=["https://smmbot-p68e.onrender.com", "http://127.0.0.1:5500", "https://www.idti.in"])
 Session(app)
-
-app.secret_key = '8f4d8f72e6a34670b0a5f4b681a2413e'
 
 creds_json = os.getenv("GOOGLE_CRED")
 if not creds_json:
@@ -107,4 +110,4 @@ def chat():
     return jsonify({"response": "Please provide your name, email, and mobile number.", "info": info})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True) 
