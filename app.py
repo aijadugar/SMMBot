@@ -11,21 +11,25 @@ import gspread
 from dotenv import load_dotenv
 load_dotenv()
 
+os.makedirs('./flask_session_dir', exist_ok=True)
+
 app = Flask(__name__)
 
 app.secret_key = '8f4d8f72e6a34670b0a5f4b681a2413e'
 
-# Session configuration
 app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_FILE_DIR'] = './flask_session_dir'  # You may need to ensure this folder exists in production
+app.config['SESSION_FILE_DIR'] = './flask_session_dir'
 app.config['SESSION_PERMANENT'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=15)
 app.config['SESSION_USE_SIGNER'] = True
+app.config['SESSION_COOKIE_NAME'] = 'idti_session'
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
-app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_SECURE'] = True  # required on Render (HTTPS)
 
-CORS(app, supports_credentials=True, origins=["https://smmbot-p68e.onrender.com", "http://127.0.0.1:5500", "https://www.idti.in"])
-os.makedirs('./flask_session_dir', exist_ok=True)
+# --- CORS for frontend on idti.in ---
+CORS(app, origins=["https://www.idti.in"], supports_credentials=True)
+
+# --- Initialize session manager ---
 Session(app)
 
 creds_json = os.getenv("GOOGLE_CRED")
