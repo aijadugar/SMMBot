@@ -106,7 +106,7 @@ def chat():
 
     # Ask for missing fields
     if not info["name"]:
-        return jsonify({"response": "Hello! May I know your full name?", "info": info})
+        return jsonify({"response": "Hello! May I know your full name, email and mobile number?", "info": info})
     elif not info["email"]:
         return jsonify({"response": f"Thanks, {info['name']}! Could you share your email address?", "info": info})
     elif not info["mobile"]:
